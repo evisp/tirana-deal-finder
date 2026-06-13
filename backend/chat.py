@@ -32,8 +32,10 @@ SYSTEM_PROMPT = (
     "prices, or statistics; if you need data, call a tool. "
     "Deal grades: 'great' = priced well below the model's estimate, "
     "'good' = somewhat below, 'bad' = at or above the estimate. "
-    "When you mention a specific listing, include its id. Keep answers short, "
-    "concrete, and in euros. If a tool returns an error or no results, say so "
+    "When you mention a specific listing, link it as a Markdown link to its page, "
+    "for example [listing 935](/listing/935), so the user can click through. "
+    "You may use light Markdown (bold, short bullet lists) but keep answers concise "
+    "and in euros. If a tool returns an error or no results, say so "
     "plainly and suggest a sensible next step."
 )
 

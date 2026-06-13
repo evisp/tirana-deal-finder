@@ -16,12 +16,18 @@ trained model once at startup. Run it with:
 
 from __future__ import annotations
 
-from flask import Flask, render_template, request, abort
+from uuid import uuid4
+
+from flask import Flask, render_template, request, abort, jsonify
 
 from app import data
-from backend import stats
+from backend import stats, chat
 
 app = Flask(__name__)
+
+# In-memory chat history, keyed by conversation id.
+# Fine for a teaching demo (single process; resets on restart).
+_conversations: dict[str, list] = {}
 
 PAGE_SIZE = 24  # listing cards shown per page
 
@@ -64,6 +70,7 @@ def home():
         stats=data.get_hero_stats(),
     )
 
+
 @app.route("/analytics")
 def analytics():
     return render_template(
@@ -71,6 +78,36 @@ def analytics():
         stats=stats.get_market_stats(),
         points=stats.get_map_points(),
     )
+
+
+@app.route("/chat", methods=["POST"])
+def chat_endpoint():
+    """Receive a message, run the tool-calling assistant, return its answer."""
+    payload = request.get_json(silent=True) or {}
+    message = (payload.get("message") or "").strip()
+    if not message:
+        return jsonify({"error": "Please type a message."}), 400
+
+    conversation_id = payload.get("conversation_id") or uuid4().hex
+    history = _conversations.get(conversation_id)
+
+    try:
+        result = chat.ask(message, history=history)
+    except Exception as exc:  # keep the widget alive on any backend failure
+        app.logger.exception("chat failed")
+        return jsonify({
+            "conversation_id": conversation_id,
+            "answer": "Sorry, I ran into a problem answering that. Please try again.",
+            "error": str(exc),
+        }), 200
+
+    _conversations[conversation_id] = result["history"]
+    return jsonify({
+        "conversation_id": conversation_id,
+        "answer": result["answer"],
+        "tools_used": [t["tool"] for t in result["trace"]],
+    })
+
 
 @app.route("/listing/<int:listing_id>")
 def listing_detail(listing_id):
