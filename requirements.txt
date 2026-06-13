@@ -16,6 +16,6 @@ python-dotenv      # for API keys in Week 3
 
 # AI layer (Week 3) — pick a provider via .env; install one or both
 anthropic              # Claude API (paid, prepaid credits via Console)
-google-generativeai    # Gemini API (has a free tier via AI Studio)
+google-genai           # Gemini API (has a free tier via AI Studio)
 # openai               # uncomment if you'd rather use OpenAI
 python-dotenv          # load the API key + provider choice from .env
