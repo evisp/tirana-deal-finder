@@ -19,6 +19,7 @@ from __future__ import annotations
 from flask import Flask, render_template, request, abort
 
 from app import data
+from backend import stats
 
 app = Flask(__name__)
 
@@ -63,6 +64,13 @@ def home():
         stats=data.get_hero_stats(),
     )
 
+@app.route("/analytics")
+def analytics():
+    return render_template(
+        "analytics.html",
+        stats=stats.get_market_stats(),
+        points=stats.get_map_points(),
+    )
 
 @app.route("/listing/<int:listing_id>")
 def listing_detail(listing_id):
