@@ -23,6 +23,7 @@ import logging
 from pathlib import Path
 
 import pandas as pd
+pd.set_option("future.no_silent_downcasting", True)
 
 # ---------------------------------------------------------------------------
 # Constants  (edit these to change behaviour — keep thresholds in one place)
@@ -36,6 +37,9 @@ PRICE_MIN = 10_000
 PRICE_MAX = 1_200_000
 SQM_MIN = 10
 SQM_MAX = 700
+# Step 5b — price-per-m² sanity bounds (catches size/price ratio errors)
+PPSQM_MIN = 300
+PPSQM_MAX = 8_000
 
 # Step 6 — source field name -> short, API-friendly name.
 # Only the columns listed here survive into the final dataset.
@@ -204,6 +208,12 @@ def build_ml_df(display_df: pd.DataFrame) -> pd.DataFrame:
     df = df[(df["price_in_euro"] >= PRICE_MIN) & (df["price_in_euro"] <= PRICE_MAX)]
     df = df[(df["square_meters"] >= SQM_MIN) & (df["square_meters"] <= SQM_MAX)]
     logger.info("ML: removed %d outlier row(s) (price/size bounds)", before - len(df))
+
+    # Step 5b — drop listings whose price-per-m² is implausible.
+    before = len(df)
+    ppsqm = df["price_in_euro"] / df["square_meters"]
+    df = df[(ppsqm >= PPSQM_MIN) & (ppsqm <= PPSQM_MAX)]
+    logger.info("ML: removed %d row(s) with implausible price/m²", before - len(df))
 
     return df.reset_index(drop=True)
 
